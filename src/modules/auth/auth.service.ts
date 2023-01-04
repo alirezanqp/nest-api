@@ -1,4 +1,10 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserSigninDto, UserSignupDto } from './dto';
 import * as argon from 'argon2';
@@ -25,8 +31,15 @@ export class AuthService {
   }
 
   async signin(dto: UserSigninDto) {
-    return {
-      msg: true,
-    };
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+    if (!user) throw new NotFoundException('user not found!');
+
+    const isValidPassword = await argon.verify(dto.password, user.password);
+    if (!isValidPassword) throw new BadRequestException('password not match!');
+
+    const getTokens = { at: 'asass' };
+    return getTokens;
   }
 }
